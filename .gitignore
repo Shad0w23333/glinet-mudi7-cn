@@ -1,0 +1,8 @@
+*.gz
+*.ppm
+*.raw
+*_key
+*_key.pub
+*.bin
+backup/
+firmware/
