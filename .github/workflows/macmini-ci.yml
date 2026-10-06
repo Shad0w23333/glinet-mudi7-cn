@@ -1,0 +1,55 @@
+name: Mac mini CI
+on:
+  push:
+    branches:
+    - '**'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: macmini-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  CI: 'true'
+  HUSKY: '0'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+defaults:
+  run:
+    shell: bash -e -o pipefail {0}
+jobs:
+  check:
+    name: Offline source checks
+    if: ${{ github.actor == github.repository_owner && (github.event_name == 'push' || github.event_name == 
+      'workflow_dispatch') }}
+    runs-on:
+    - self-hosted
+    - macOS
+    - ARM64
+    - macmini
+    timeout-minutes: 120
+    steps:
+    - name: Check latest commit
+      run: python3 /Users/server/Documents/Codex/ci-macmini/bin/check_fresh.py
+      env:
+        GH_TOKEN: ${{ github.token }}
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+        submodules: false
+    - name: Offline syntax and manifest checks
+      run: python3 /Users/server/Documents/Codex/ci-macmini/bin/validate-assets.py
+    - name: Record check coverage
+      run: python3 /Users/server/Documents/Codex/ci-macmini/bin/project-ci.py
+    - name: Collect CI outputs
+      if: ${{ always() && env.MACMINI_FRESH == 'true' }}
+      run: python3 /Users/server/Documents/Codex/ci-macmini/bin/collect-artifacts.py
+    - name: Upload CI outputs
+      if: ${{ always() && env.MACMINI_FRESH == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: macmini-${{ github.run_id }}-${{ github.run_attempt }}
+        path: ${{ runner.temp }}/ci-artifacts/
+        retention-days: 7
+        if-no-files-found: error
