@@ -21,8 +21,7 @@ defaults:
 jobs:
   check:
     name: Offline source checks
-    if: ${{ github.actor == github.repository_owner && (github.event_name == 'push' || github.event_name == 
-      'workflow_dispatch') }}
+    if: "${{ github.actor == github.repository_owner && github.triggering_actor == github.repository_owner && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.actor == github.repository_owner && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) }}"
     runs-on:
     - self-hosted
     - macOS
